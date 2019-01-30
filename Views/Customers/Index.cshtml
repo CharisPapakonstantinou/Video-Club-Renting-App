@@ -1,0 +1,149 @@
+﻿
+@*@model IEnumerable<Vidly.Models.Customer>*@
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Customers</h1>
+
+<p>
+    @Html.ActionLink("New Customer", "New", "Customers", null, new { @class = "btn btn-primary" })
+</p>
+<br />
+
+<p id="ShowIfNotCustomers">We dont have customers</p>
+
+
+<br />
+<table id="customers" class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>Customer</th>
+            <th>Membership Type</th>
+            <th>Delete</th>
+        </tr>
+    </thead>
+    <tbody>
+        @*@foreach (var customer in Model)
+        {
+            <tr>
+                <td>
+                    @Html.ActionLink(@customer.Name, "Details", new { Id = customer.Id })
+                </td>
+                <td>@customer.MembershipType.Name</td>
+                <td><button data-customer-id="@customer.Id" class="btn-link js-delete">Delete</button></td>
+            </tr>
+
+        }*@
+    </tbody>
+
+</table>
+
+@section scripts
+{
+    <script>
+        $(document).ready(function () {
+
+
+            $.ajax({
+
+                url: "/api/customers",
+                method: "GET",
+                success: function () {
+
+                    $("#ShowIfNotCustomers").hide();
+                }
+
+            });
+
+           var table = $('#customers').DataTable({
+
+                // to use API as a data source for this datatable we need to provide a configuration object
+                // this object need a property called Ajax which is also an object
+
+                ajax: {
+                    url: "/api/customers",
+                    dataSrc: "" // because the response we will get from API is an array of objects, we set datasrc to an empty string
+                },
+                columns: /*we choose an array*/ [
+
+                    // for each column we suply an object
+
+                    {
+                        // first column
+
+                        data: "name", // we use data property to tell datatable plug in where to get data for this column, so datatable will use the data of customer.name as plain text to render each row
+                        render: function (data, type, customer) {
+                            return "<a href='/customers/edit/" + customer.id + "'>" + customer.name + "</a>";
+                        }
+                    },
+
+                    {
+                        // second column
+
+                        data: "membershipType.name"
+                    },
+
+                    {
+                        // third column
+
+                        data: "id",
+                        render: function (data) {
+
+                            return "<button class ='btn btn-link js-delete' data-customer-id=" + data + ">Delete</button>";
+                        }
+                    }
+                ]
+
+            });
+
+            $("#customers").on("click",".js-delete", function () {
+
+                var button = $(this);
+
+                // bootbox.confirm() does not return a boolean value instead it takes a callback fuction
+                bootbox.confirm("Are you sure you want to delete this customer?", function (result) {
+                    if (result) { // if result its not null or undefined
+                        $.ajax({
+
+                            // here we pass an object
+                            url: "/api/customers/" + button.attr("data-customer-id"), // or "/api/customers/" + $(this).attr("data-customer-id")
+                            method: "DELETE",
+                            success: function () {
+
+                                table.row(button.parents("tr")).remove().draw();
+                                //button.parents("tr").remove();
+                            }
+
+                        });
+                    }
+                });
+
+                //if (confirm("Are you sure you want to delete this customer?")) {
+
+                //    var button = $(this);
+
+                //    // if true we call an api using jquery ajax
+                //    $.ajax({
+
+                //        // here we pass an object
+                //        url: "/api/customers/" + button.attr("data-customer-id"), // or "/api/customers/" + $(this).attr("data-customer-id")
+                //        method: "DELETE",
+                //        success: function () {
+                //            button.parents("tr").remove();
+                //        }
+
+                //    });
+                //}
+
+            });
+
+           
+
+        });
+    </script>
+}   
+    
+    
+
